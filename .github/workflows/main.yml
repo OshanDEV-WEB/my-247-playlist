@@ -24,6 +24,6 @@ jobs:
         
         # playlist.txt එකේ තියෙන වීඩියෝ ටික එකදිගටම ලූප් කරමින් ස්ට්‍රීම් එකට යැවීම
         ffmpeg -f concat -safe 0 -protocol_whitelist file,http,https,tcp,tls -re -stream_loop -1 -i playlist.txt \
-          -c:v libx264 -preset veryfast -b:v 2500k -maxrate 2500k -bufsize 5000k \
+          -c:v libx264 -preset veryfast -b:v 3570k -maxrate 3500k -bufsize 5000k \
           -pix_fmt yuv420p -g 50 -c:a aac -b:a 128k -ar 44100 \
           -f flv "${{ secrets.STREAM_URL }}/${{ secrets.STREAM_KEY }}"
