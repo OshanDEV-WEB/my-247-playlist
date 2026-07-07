@@ -1,8 +1,8 @@
-name: 24/7 Playlist Live Stream
+name: 24/7 YouTube Playlist Live Stream
 
 on:
   schedule:
-    - cron: '0 */5 * * *' # සෑම පැය 5කට වරක්ම ස්ට්‍රීම් එක ඔටෝ රීස්ටාර්ට් වේ
+    - cron: '0 */5 * * *' # සෑම පැය 5කට වරක්ම ඔටෝ රීස්ටාර්ට් වේ
   workflow_dispatch: # බටන් එකෙන් ස්ටාර්ට් කළ හැක
 
 jobs:
@@ -13,35 +13,20 @@ jobs:
     - name: Checkout Code
       uses: actions/checkout@v3
 
-    - name: Install FFmpeg
+    - name: Install FFmpeg and yt-dlp
       run: |
         sudo apt-get update
-        sudo apt-get install -y ffmpeg wget
-
-    - name: Download Videos Locally
-      run: |
-        echo "Downloading Google Drive videos to server..."
-        
-        # පළමු වීඩියෝව ඩවුන්ලෝඩ් කිරීම (Google Drive Large File Bypass ක්‍රමයට)
-        wget --load-cookies /tmp/cookies.txt "https://docs.google.com/uc?export=download&confirm=$(wget --quiet --save-cookies /tmp/cookies.txt --keep-session-cookies --no-check-certificate 'https://docs.google.com/uc?export=download&id=1T--nVeIcRpwe150I6I36aVJPZXhKmA9b' -O- | sed -rn 's/.*confirm=([0-9A-Za-z_]+).*/\1\n/p')&id=1T--nVeIcRpwe150I6I36aVJPZXhKmA9b" -O video1.mp4 && rm -rf /tmp/cookies.txt
-        
-        # දෙවැනි වීඩියෝව ඩවුන්ලෝඩ් කිරීම
-        wget --load-cookies /tmp/cookies.txt "https://docs.google.com/uc?export=download&confirm=$(wget --quiet --save-cookies /tmp/cookies.txt --keep-session-cookies --no-check-certificate 'https://docs.google.com/uc?export=download&id=1YRT0WFhb6En8E-E-h-o2GIkrarV0fdkv' -O- | sed -rn 's/.*confirm=([0-9A-Za-z_]+).*/\1\n/p')&id=1YRT0WFhb6En8E-E-h-o2GIkrarV0fdkv" -O video2.mp4 && rm -rf /tmp/cookies.txt
-
-        echo "Downloads completed!"
-
-    - name: Create Local Playlist File
-      run: |
-        # සර්වර් එක ඇතුළේ අලුත් playlist.txt එකක් සාදා වීඩියෝ දෙක ඇතුළත් කිරීම
-        echo "file 'video1.mp4'" > local_playlist.txt
-        echo "file 'video2.mp4'" >> local_playlist.txt
+        sudo apt-get install -y ffmpeg python3-pip
+        # YouTube වීඩියෝ කෙළින්ම ස්ට්‍රීම් කිරීමට අවශ්‍ය yt-dlp ටූල් එක ඉන්ස්ටෝල් කිරීම
+        sudo wget https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp -O /usr/local/bin/yt-dlp
+        sudo chmod a+rx /usr/local/bin/yt-dlp
 
     - name: Start Playlist Stream
       run: |
-        echo "Starting 24/7 Playlist Stream from Local Server Files..."
+        echo "Starting 24/7 Live Stream from YouTube Links..."
         
-        # දේශීයව ඇති වීඩියෝ දෙක ලස්සනට 720p HD මට්ටමට සකසා ස්ට්‍රීම් එක දිගටම යැවීම
-        ffmpeg -f concat -safe 0 -re -stream_loop -1 -i local_playlist.txt \
+        # playlist.txt එකේ ඇති YouTube ලින්ක්ස් එකින් එක කියවමින් 720p වලින් ලූප් කර ස්ට්‍රීම් කිරීම
+        ffmpeg -f concat -safe 0 -protocol_whitelist file,http,https,tcp,tls,crypto -re -stream_loop -1 -i playlist.txt \
           -vf "scale=1280:720:force_original_aspect_ratio=decrease,pad=1280:720:(ow-iw)/2:(oh-ih)/2,fps=30" \
           -c:v libx264 -preset veryfast -b:v 3000k -maxrate 3000k -bufsize 6000k \
           -pix_fmt yuv420p -g 60 -c:a aac -b:a 128k -ar 44100 \
