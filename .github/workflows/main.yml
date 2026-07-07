@@ -23,7 +23,9 @@ jobs:
         echo "Starting 24/7 Playlist Stream..."
         
         # playlist.txt එකේ තියෙන වීඩියෝ ටික එකදිගටම ලූප් කරමින් ස්ට්‍රීම් එකට යැවීම
+        # මෙහිදී වීඩියෝ දෙකම එකම 720p HD මට්ටමට සකසා ස්ට්‍රීම් ස්ටේබල් කර ඇත
         ffmpeg -f concat -safe 0 -protocol_whitelist file,http,https,tcp,tls -re -stream_loop -1 -i playlist.txt \
-          -c:v libx264 -preset veryfast -b:v 3570k -maxrate 4000k -bufsize 5000k \
-          -pix_fmt yuv420p -g 50 -c:a aac -b:a 128k -ar 44100 \
+          -vf "scale=1280:720:force_original_aspect_ratio=decrease,pad=1280:720:(ow-iw)/2:(oh-ih)/2,fps=30" \
+          -c:v libx264 -preset veryfast -b:v 3000k -maxrate 3000k -bufsize 6000k \
+          -pix_fmt yuv420p -g 60 -c:a aac -b:a 128k -ar 44100 \
           -f flv "${{ secrets.STREAM_URL }}/${{ secrets.STREAM_KEY }}"
