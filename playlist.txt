@@ -1,2 +1,2 @@
-file 'https://www.youtube.com/watch?v=z8wZNJ3_V18'
-file 'https://www.youtube.com/watch?v=OhqyU2s7L7I'
+file 'https://github.com/OshanDEV-WEB/my-247-playlist/releases/download/v1.0/video1.mp4'
+file 'https://github.com/OshanDEV-WEB/my-247-playlist/releases/download/v1.0/video2.mp4'
