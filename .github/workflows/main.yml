@@ -1,4 +1,4 @@
-name: 24/7 YouTube Playlist Live Stream
+name: 24/7 Release Playlist Live Stream
 
 on:
   schedule:
@@ -13,39 +13,17 @@ jobs:
     - name: Checkout Code
       uses: actions/checkout@v3
 
-    - name: Install FFmpeg and yt-dlp
+    - name: Install FFmpeg
       run: |
         sudo apt-get update
         sudo apt-get install -y ffmpeg
-        # අලුත්ම yt-dlp එක සර්වර් එකට ගැනීම
-        sudo wget https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp -O /usr/local/bin/yt-dlp
-        sudo chmod a+rx /usr/local/bin/yt-dlp
-
-    - name: Process YouTube Links to Direct Stream URLs
-      run: |
-        echo "Converting YouTube links to direct video streams..."
-        rm -f live_playlist.txt
-        
-        # playlist.txt එකේ තියෙන හැම ලින්ක් එකක්ම කියවා එහි ඇත්තම වීඩියෝ ලින්ක් එක වෙන් කර ගැනීම
-        while IFS= read -r line || [ -n "$line" ]; do
-          # file 'URL' කියන එකෙන් URL එක විතරක් වෙන් කර ගැනීම
-          url=$(echo "$line" | sed "s/file '//;s/'//")
-          if [[ $url == http* ]]; then
-            echo "Processing: $url"
-            # Best quality 720p/1080p video+audio direct link එක ලබා ගැනීම
-            direct_url=$(yt-dlp -g -f "best" "$url")
-            echo "file '$direct_url'" >> live_playlist.txt
-          fi
-        done < playlist.txt
-        
-        echo "New local playlist created successfully!"
 
     - name: Start Playlist Stream
       run: |
-        echo "Starting 24/7 Live Stream from Processed YouTube Streams..."
+        echo "Starting 24/7 Live Stream from GitHub Release Links..."
         
-        # වෙන් කරගත් ලින්ක්ස් ලස්සනට ස්ටේබල් 720p HD මට්ටමට සකසා ස්ට්‍රීම් එක දිගටම යැවීම
-        ffmpeg -f concat -safe 0 -protocol_whitelist file,http,https,tcp,tls,crypto -re -stream_loop -1 -i live_playlist.txt \
+        # GitHub Release එකෙන් කෙළින්ම වීඩියෝ ලූප් කරමින් ස්ට්‍රීම් එක දිගටම යැවීම
+        ffmpeg -f concat -safe 0 -protocol_whitelist file,http,https,tcp,tls,crypto -re -stream_loop -1 -i playlist.txt \
           -vf "scale=1280:720:force_original_aspect_ratio=decrease,pad=1280:720:(ow-iw)/2:(oh-ih)/2,fps=30" \
           -c:v libx264 -preset veryfast -b:v 3000k -maxrate 3000k -bufsize 6000k \
           -pix_fmt yuv420p -g 60 -c:a aac -b:a 128k -ar 44100 \
