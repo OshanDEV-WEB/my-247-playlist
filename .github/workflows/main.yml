@@ -1,0 +1,29 @@
+name: 24/7 Playlist Live Stream
+
+on:
+  schedule:
+    - cron: '0 */5 * * *' # සෑම පැය 5කට වරක්ම ස්ට්‍රීම් එක ඔටෝ රීස්ටාර්ට් වේ (Timeout වීම වැළැක්වීමට)
+  workflow_dispatch: # අපිට ඕන වෙලාවක බටන් එක ඔබලා ලයිව් එක පටන් ගන්න පුළුවන්
+
+jobs:
+  stream:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v3
+
+    - name: Install FFmpeg
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y ffmpeg
+
+    - name: Start Playlist Stream
+      run: |
+        echo "Starting 24/7 Playlist Stream..."
+        
+        # playlist.txt එකේ තියෙන වීඩියෝ ටික එකදිගටම ලූප් කරමින් ස්ට්‍රීම් එකට යැවීම
+        ffmpeg -f concat -safe 0 -protocol_whitelist file,http,https,tcp,tls -re -stream_loop -1 -i playlist.txt \
+          -c:v libx264 -preset veryfast -b:v 2500k -maxrate 2500k -bufsize 5000k \
+          -pix_fmt yuv420p -g 50 -c:a aac -b:a 128k -ar 44100 \
+          -f flv "${{ secrets.STREAM_URL }}/${{ secrets.STREAM_KEY }}"
