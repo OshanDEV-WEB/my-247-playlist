@@ -2,8 +2,8 @@ name: 24/7 Playlist Live Stream
 
 on:
   schedule:
-    - cron: '0 */5 * * *' # සෑම පැය 5කට වරක්ම ස්ට්‍රීම් එක ඔටෝ රීස්ටාර්ට් වේ (Timeout වීම වැළැක්වීමට)
-  workflow_dispatch: # අපිට ඕන වෙලාවක බටන් එක ඔබලා ලයිව් එක පටන් ගන්න පුළුවන්
+    - cron: '0 */5 * * *' # සෑම පැය 5කට වරක්ම ස්ට්‍රීම් එක ඔටෝ රීස්ටාර්ට් වේ
+  workflow_dispatch: # බටන් එකෙන් ස්ටාර්ට් කළ හැක
 
 jobs:
   stream:
@@ -16,15 +16,32 @@ jobs:
     - name: Install FFmpeg
       run: |
         sudo apt-get update
-        sudo apt-get install -y ffmpeg
+        sudo apt-get install -y ffmpeg wget
+
+    - name: Download Videos Locally
+      run: |
+        echo "Downloading Google Drive videos to server..."
+        
+        # පළමු වීඩියෝව ඩවුන්ලෝඩ් කිරීම (Google Drive Large File Bypass ක්‍රමයට)
+        wget --load-cookies /tmp/cookies.txt "https://docs.google.com/uc?export=download&confirm=$(wget --quiet --save-cookies /tmp/cookies.txt --keep-session-cookies --no-check-certificate 'https://docs.google.com/uc?export=download&id=1T--nVeIcRpwe150I6I36aVJPZXhKmA9b' -O- | sed -rn 's/.*confirm=([0-9A-Za-z_]+).*/\1\n/p')&id=1T--nVeIcRpwe150I6I36aVJPZXhKmA9b" -O video1.mp4 && rm -rf /tmp/cookies.txt
+        
+        # දෙවැනි වීඩියෝව ඩවුන්ලෝඩ් කිරීම
+        wget --load-cookies /tmp/cookies.txt "https://docs.google.com/uc?export=download&confirm=$(wget --quiet --save-cookies /tmp/cookies.txt --keep-session-cookies --no-check-certificate 'https://docs.google.com/uc?export=download&id=1YRT0WFhb6En8E-E-h-o2GIkrarV0fdkv' -O- | sed -rn 's/.*confirm=([0-9A-Za-z_]+).*/\1\n/p')&id=1YRT0WFhb6En8E-E-h-o2GIkrarV0fdkv" -O video2.mp4 && rm -rf /tmp/cookies.txt
+
+        echo "Downloads completed!"
+
+    - name: Create Local Playlist File
+      run: |
+        # සර්වර් එක ඇතුළේ අලුත් playlist.txt එකක් සාදා වීඩියෝ දෙක ඇතුළත් කිරීම
+        echo "file 'video1.mp4'" > local_playlist.txt
+        echo "file 'video2.mp4'" >> local_playlist.txt
 
     - name: Start Playlist Stream
       run: |
-        echo "Starting 24/7 Playlist Stream..."
+        echo "Starting 24/7 Playlist Stream from Local Server Files..."
         
-        # playlist.txt එකේ තියෙන වීඩියෝ ටික එකදිගටම ලූප් කරමින් ස්ට්‍රීම් එකට යැවීම
-        # මෙහිදී වීඩියෝ දෙකම එකම 720p HD මට්ටමට සකසා ස්ට්‍රීම් ස්ටේබල් කර ඇත
-        ffmpeg -f concat -safe 0 -protocol_whitelist file,http,https,tcp,tls -re -stream_loop -1 -i playlist.txt \
+        # දේශීයව ඇති වීඩියෝ දෙක ලස්සනට 720p HD මට්ටමට සකසා ස්ට්‍රීම් එක දිගටම යැවීම
+        ffmpeg -f concat -safe 0 -re -stream_loop -1 -i local_playlist.txt \
           -vf "scale=1280:720:force_original_aspect_ratio=decrease,pad=1280:720:(ow-iw)/2:(oh-ih)/2,fps=30" \
           -c:v libx264 -preset veryfast -b:v 3000k -maxrate 3000k -bufsize 6000k \
           -pix_fmt yuv420p -g 60 -c:a aac -b:a 128k -ar 44100 \
